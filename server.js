@@ -1,5 +1,21 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+
+// Connect to MongoDB (replace 'your_database_name' with your database name)
+mongoose.connect('mongodb://localhost:27017/registrationDB', { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => console.error('Failed to connect to MongoDB', err));
+
+// Define the User schema
+const userSchema = new mongoose.Schema({
+    username: String,
+    email: String,
+    password: String
+});
+
+// Create the User model from the schema
+const User = mongoose.model('User', userSchema);
 
 const app = express();
 const port = 3000;
@@ -7,16 +23,23 @@ const port = 3000;
 app.use(bodyParser.json());
 app.use(express.static('public')); // Serve static files from the 'public' directory
 
-app.post('/register', (req, res) => {
+// Handle POST requests to the /register endpoint
+app.post('/register', async (req, res) => {
     const { username, email, password } = req.body;
 
-    // Here you would typically handle the registration logic, such as saving the user to a database
-    console.log(`Received registration: ${username}, ${email}`);
+    // Create a new user document
+    const newUser = new User({ username, email, password });
 
-    // For demonstration purposes, we're just sending a success response
-    res.json({ success: true });
+    try {
+        // Save the user to the database
+        await newUser.save();
+        res.json({ success: true, message: 'Registration successful' });
+    } catch (err) {
+        res.json({ success: false, message: 'Registration failed' });
+    }
 });
 
+// Start the server
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });
